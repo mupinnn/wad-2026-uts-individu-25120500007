@@ -136,3 +136,18 @@ def list_bookings(q: str, skip: int, limit: int) -> tuple[list[dict], int]:
 
 def get_booking(booking_id: int) -> dict | None:
     return next((booking for booking in _BOOKINGS if booking["id"] == booking_id), None)
+
+
+def create_booking(data: dict) -> dict:
+    next_id = max((booking["id"] for booking in _BOOKINGS), default=0) + 1
+    booking = {"id": next_id, **data}
+    _BOOKINGS.append(booking)
+    return booking
+
+
+def delete_booking(booking_id: int) -> bool:
+    for index, booking in enumerate(_BOOKINGS):
+        if booking["id"] == booking_id:
+            del _BOOKINGS[index]
+            return True
+    return False

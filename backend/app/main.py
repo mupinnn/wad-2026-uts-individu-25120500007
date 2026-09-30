@@ -1,9 +1,25 @@
-from fastapi import FastAPI, HTTPException, Query
+import os
 
-from app.schemas import BookingList, BookingOut
-from app.services import get_booking, list_bookings
+from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.schemas import BookingCreate, BookingList, BookingOut
+from app.services import create_booking, delete_booking, get_booking, list_bookings
 
 app = FastAPI(title="Shuttle Booking")
+
+_origins = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
@@ -27,3 +43,15 @@ def read_booking(booking_id: int):
     if booking is None:
         raise HTTPException(status_code=404, detail="Pemesanan tidak ditemukan")
     return booking
+
+
+@app.post("/bookings", status_code=201, response_model=BookingOut)
+def add_booking(body: BookingCreate):
+    return create_booking(body.model_dump())
+
+
+@app.delete("/bookings/{booking_id}", status_code=204)
+def remove_booking(booking_id: int):
+    if not delete_booking(booking_id):
+        raise HTTPException(status_code=404, detail="Pemesanan tidak ditemukan")
+    return Response(status_code=204)
