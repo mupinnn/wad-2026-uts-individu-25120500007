@@ -1,10 +1,15 @@
+<script setup lang="ts">
+import BookingList from "@/components/BookingList.vue"
+</script>
+
 <template>
   <div class="min-h-svh bg-background text-foreground">
-    <header class="border-b px-6 py-4">
-      <h1 class="text-xl font-semibold">WAD 2026 UTS</h1>
+    <header class="border-b px-4 py-4 sm:px-6">
+      <h1 class="text-xl font-semibold">Shuttle Kampus</h1>
+      <p class="text-sm text-muted-foreground">Pemesanan transportasi mahasiswa</p>
     </header>
-    <main class="px-6 py-8">
-      <p class="text-muted-foreground">Vite, Vue, and shadcn-vue.</p>
+    <main class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
+      <BookingList />
     </main>
   </div>
 </template>
