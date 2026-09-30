@@ -5,9 +5,9 @@
 Repo ini adalah tempat kerja kelompokmu selama 16 sesi. Artefak tiap sesi dikerjakan **di dalam
 sesi** dan di-commit sebelum kelas selesai. **Tidak ada pekerjaan rumah.**
 
-Repo ini sengaja **belum berisi aplikasi**. `frontend/` dan `backend/` kosong — kamu yang
-mengisinya, mulai malam ini di Sesi 2. Yang sudah disediakan hanyalah rel: dokumen, CI, dan
-pemeriksa nilai.
+Aplikasi UTS di repo ini adalah **Shuttle Kampus**: pemesanan kursi shuttle untuk mahasiswa.
+Datanya 12 pemesanan contoh di memori (hilang saat server dimatikan). Kontrak lengkap ada di
+[`docs/api-contract.md`](docs/api-contract.md).
 
 > **Proyek akhir mata kuliah ini bernama The Build, bobot 20% (Tugas Kelompok).**
 > The Build bukan tugas tambahan. The Build adalah gabungan artefak Sesi 2–14 di repo ini,
@@ -73,8 +73,8 @@ SQLite, yang sudah menyatu dengan Python.
 
 | Layanan | Port lokal | Mulai dipakai | Catatan |
 |---|---|---|---|
-| Frontend (Vite + Vue 3) | `5173` | Sesi 2 | kamu yang membuat isi `frontend/` |
-| Backend (FastAPI + Uvicorn) | `8000` | Sesi 2 | kamu yang membuat isi `backend/` |
+| Frontend (Vite + Vue 3) | `5173` | Sesi 2 | daftar, formulir, dan detail pemesanan shuttle |
+| Backend (FastAPI + Uvicorn) | `8000` | Sesi 2 | `/health` dan `/bookings` (list, detail, buat, hapus) |
 | Basis data | — | Sesi 3 | SQLite lokal; ganti ke Postgres (Neon) di Sesi 5 lewat `DATABASE_URL` |
 
 ## 3. Cara menjalankan
@@ -117,9 +117,15 @@ Kalau hijau di laptopmu, hijau juga saat dinilai. Jalankan sebelum kamu keluar d
 
 Verifikasi manual yang juga dinilai:
 
-- `http://localhost:5173` — halaman kerangka muncul, masih rapi di lebar 360px
+- `http://localhost:5173` — daftar pemesanan, masih rapi di lebar 360px. Coba cari, halaman kosong, lalu formulir dan hapus.
 - `http://localhost:8000/health` — balas `200` dengan `{"status":"ok"}`
 - `http://localhost:8000/docs` — OpenAPI terbuka
+- `GET /bookings?q=&skip=0&limit=6` — daftar terpaginasi, `200`
+- `GET /bookings/1` — satu pemesanan, `200`; id yang tidak ada, `404`
+- `POST /bookings` — pemesanan baru, `201`; isian tidak valid, `422`
+- `DELETE /bookings/1` — `204`; id yang tidak ada, `404`
+
+CORS membaca `CORS_ORIGINS` (bawaan `http://localhost:5173`).
 
 ## 5. Masalah yang sering muncul
 

@@ -16,24 +16,24 @@ Commit berkas ini dalam PR `feature/kerangka` yang sama dengan artefak Sesi 2.
 
 **A1 · Domain.** Aplikasi ini untuk siapa, mengurus apa. Satu kalimat.
 
-> `<contoh: Aplikasi pencatatan kunjungan pasien untuk klinik kecil.>`
+> Aplikasi pemesanan kursi shuttle kampus untuk mahasiswa.
 
 **A2 · Alur inti.** Siapa melakukan apa, lalu melihat apa. Satu kalimat. Inilah yang akan kamu
 demokan selama 90 detik di Sesi 15.
 
-> `<contoh: Petugas login, mencatat satu kunjungan pasien, lalu melihat grafik kunjungan per bulan.>`
+> Mahasiswa mencari pemesanan, membuat satu pemesanan baru, lalu melihat detailnya atau menghapusnya.
 
 **A3 · Entitas induk.** Nama tabel + 4–6 kolom.
 
-> `<contoh: pasien — id, nama, tanggal_lahir, no_telepon, dibuat_pada>`
+> pemesanan — id, nama_penumpang, nim, rute, titik_jemput, waktu_berangkat, jumlah_kursi
 
 **A4 · Entitas anak.** Nama tabel + 4–6 kolom, termasuk foreign key ke induk.
 
-> `<contoh: kunjungan — id, pasien_id (FK), tanggal, keluhan, biaya>`
+> Tidak ada entitas anak pada UTS ini. Satu koleksi pemesanan di memori, tanpa foreign key dan tanpa tabel users.
 
 **A5 · Satu angka yang digambar grafik.** Angka agregat, bukan daftar.
 
-> `<contoh: jumlah kunjungan per bulan, 12 bulan terakhir>`
+> UTS ini belum menggambar grafik. Angka agregat yang menyusul: jumlah pemesanan per rute.
 
 ### Pembagian slice (diisi malam ini juga)
 
