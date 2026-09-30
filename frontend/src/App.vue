@@ -3,11 +3,21 @@ import { ref } from "vue"
 import BookingDetail from "@/components/BookingDetail.vue"
 import BookingForm from "@/components/BookingForm.vue"
 import BookingList from "@/components/BookingList.vue"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
 import { deleteBooking, describeError, type Booking } from "@/lib/api"
 
-type View = "list" | "form" | "detail"
-
-const view = ref<View>("list")
+const formOpen = ref(false)
+const detailOpen = ref(false)
 const selectedId = ref<number | null>(null)
 const revision = ref(0)
 const pendingDelete = ref<Booking | null>(null)
@@ -16,7 +26,12 @@ const deleting = ref(false)
 
 function openDetail(id: number) {
   selectedId.value = id
-  view.value = "detail"
+  detailOpen.value = true
+}
+
+function showList() {
+  formOpen.value = false
+  detailOpen.value = false
 }
 
 function askDelete(booking: Booking) {
@@ -24,32 +39,30 @@ function askDelete(booking: Booking) {
   pendingDelete.value = booking
 }
 
-function cancelDelete() {
-  if (deleting.value) return
+function onDeleteOpen(open: boolean) {
+  if (open || deleting.value) return
   pendingDelete.value = null
   deleteError.value = ""
 }
 
-async function confirmDelete() {
-  if (!pendingDelete.value) return
+function onConfirmDelete(event: Event) {
+  event.preventDefault()
+  const booking = pendingDelete.value
+  if (!booking || deleting.value) return
   deleting.value = true
   deleteError.value = ""
-  try {
-    await deleteBooking(pendingDelete.value.id)
-    pendingDelete.value = null
-    selectedId.value = null
-    view.value = "list"
-    revision.value += 1
-  } catch (error) {
-    deleteError.value = describeError(error, "Gagal menghapus pemesanan")
-  } finally {
-    deleting.value = false
-  }
-}
-
-function onCreated() {
-  view.value = "list"
-  revision.value += 1
+  deleteBooking(booking.id)
+    .then(() => {
+      pendingDelete.value = null
+      detailOpen.value = false
+      revision.value += 1
+    })
+    .catch((error: unknown) => {
+      deleteError.value = describeError(error, "Gagal menghapus pemesanan")
+    })
+    .finally(() => {
+      deleting.value = false
+    })
 }
 </script>
 
@@ -62,77 +75,45 @@ function onCreated() {
           <p class="text-sm text-muted-foreground">Pemesanan transportasi mahasiswa</p>
         </div>
         <nav class="flex gap-2" aria-label="Utama">
-          <button
-            type="button"
-            class="h-9 rounded-md border px-3 text-sm"
-            @click="view = 'list'"
-          >
-            Daftar
-          </button>
-          <button
-            type="button"
-            class="h-9 rounded-md border px-3 text-sm"
-            @click="view = 'form'"
-          >
-            Pesan
-          </button>
+          <Button type="button" variant="outline" @click="showList">Daftar</Button>
+          <Button type="button" variant="outline" @click="formOpen = true">Pesan</Button>
         </nav>
       </div>
     </header>
 
     <main class="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6">
       <BookingList
-        v-if="view === 'list'"
         :revision="revision"
-        @create="view = 'form'"
+        @create="formOpen = true"
         @open="openDetail"
         @remove="askDelete"
       />
-      <BookingForm v-else-if="view === 'form'" @cancel="view = 'list'" @created="onCreated" />
+      <BookingForm v-model:open="formOpen" @created="revision += 1" />
       <BookingDetail
-        v-else-if="selectedId !== null"
+        v-if="selectedId !== null"
         :id="selectedId"
-        @back="view = 'list'"
+        v-model:open="detailOpen"
         @remove="askDelete"
       />
     </main>
 
-    <div
-      v-if="pendingDelete"
-      class="fixed inset-0 z-10 flex items-end justify-center bg-foreground/40 p-4 sm:items-center"
-      @click.self="cancelDelete"
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-title"
-        class="w-full max-w-md rounded-lg border bg-background p-4 shadow-lg"
-      >
-        <h2 id="confirm-title" class="text-lg font-semibold">Hapus pemesanan?</h2>
-        <p class="mt-2 text-sm text-muted-foreground">
-          Pemesanan {{ pendingDelete.nama_penumpang }} (NIM {{ pendingDelete.nim }}) akan dihapus.
-          Tindakan ini tidak dapat dibatalkan.
-        </p>
-        <p v-if="deleteError" role="alert" class="mt-2 text-sm text-destructive">{{ deleteError }}</p>
-        <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            class="h-10 rounded-md border px-4 text-sm"
-            :disabled="deleting"
-            @click="cancelDelete"
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            class="h-10 rounded-md bg-destructive px-4 text-sm font-medium text-white"
-            :disabled="deleting"
-            @click="confirmDelete"
-          >
+    <AlertDialog :open="pendingDelete !== null" @update:open="onDeleteOpen">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus pemesanan?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Pemesanan {{ pendingDelete?.nama_penumpang }} (NIM {{ pendingDelete?.nim }}) akan dihapus.
+            Tindakan ini tidak dapat dibatalkan.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <p v-if="deleteError" role="alert" class="text-sm text-destructive">{{ deleteError }}</p>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="deleting">Batal</AlertDialogCancel>
+          <AlertDialogAction variant="destructive" :disabled="deleting" @click.capture="onConfirmDelete">
             {{ deleting ? "Menghapus…" : "Hapus" }}
-          </button>
-        </div>
-      </div>
-    </div>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   </div>
 </template>

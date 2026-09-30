@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue"
 import { describeError, listBookings, type Booking } from "@/lib/api"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 const props = defineProps<{ revision: number }>()
 const emit = defineEmits<{
@@ -80,91 +91,65 @@ onMounted(load)
         <h2 id="daftar-heading" class="text-lg font-semibold">Daftar pemesanan</h2>
         <p class="text-sm text-muted-foreground">Cari berdasarkan nama, NIM, atau rute.</p>
       </div>
-      <button
-        type="button"
-        class="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-        @click="emit('create')"
-      >
-        Pesan shuttle
-      </button>
+      <Button type="button" @click="emit('create')">Pesan shuttle</Button>
     </div>
 
     <form class="mb-4 flex flex-col gap-2 sm:flex-row" @submit.prevent="search">
-      <label class="sr-only" for="cari">Cari pemesanan</label>
-      <input
+      <Label class="sr-only" for="cari">Cari pemesanan</Label>
+      <Input
         id="cari"
         v-model="query"
         type="search"
         placeholder="Nama, NIM, atau rute"
-        class="h-10 w-full rounded-md border bg-background px-3 text-sm"
+        class="sm:flex-1"
       />
-      <button
-        type="submit"
-        class="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-      >
-        Cari
-      </button>
+      <Button type="submit">Cari</Button>
     </form>
 
     <p v-if="status === 'loading'" role="status" class="py-10 text-center text-sm text-muted-foreground">
       Memuat pemesanan…
     </p>
 
-    <div
-      v-else-if="status === 'error'"
-      role="alert"
-      class="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-6 text-center"
-    >
-      <p class="text-sm">{{ errorMessage }}</p>
-      <button
-        type="button"
-        class="mt-3 h-9 rounded-md border px-3 text-sm"
-        @click="load"
-      >
-        Coba lagi
-      </button>
-    </div>
+    <Card v-else-if="status === 'error'" role="alert">
+      <CardContent class="flex flex-col items-center gap-3 py-6 text-center">
+        <p class="text-sm">{{ errorMessage }}</p>
+        <Button type="button" variant="outline" @click="load">Coba lagi</Button>
+      </CardContent>
+    </Card>
 
-    <p
-      v-else-if="status === 'empty'"
-      class="rounded-lg border border-dashed px-4 py-10 text-center text-sm text-muted-foreground"
-    >
-      <template v-if="submittedQuery">
-        Tidak ada pemesanan untuk “{{ submittedQuery }}”.
-      </template>
-      <template v-else>Belum ada pemesanan.</template>
-    </p>
+    <Card v-else-if="status === 'empty'">
+      <CardContent class="py-10 text-center text-sm text-muted-foreground">
+        <template v-if="submittedQuery">
+          Tidak ada pemesanan untuk “{{ submittedQuery }}”.
+        </template>
+        <template v-else>Belum ada pemesanan.</template>
+      </CardContent>
+    </Card>
 
     <template v-else>
       <ul class="flex flex-col gap-3">
-        <li
-          v-for="item in items"
-          :key="item.id"
-          class="rounded-lg border bg-card px-4 py-3"
-        >
-          <p class="font-medium">{{ item.nama_penumpang }}</p>
-          <p class="text-sm text-muted-foreground">NIM {{ item.nim }}</p>
-          <p class="mt-2 text-sm">{{ item.rute }}</p>
-          <p class="text-sm text-muted-foreground">
-            {{ item.titik_jemput }} · {{ formatWhen(item.waktu_berangkat) }} ·
-            {{ item.jumlah_kursi }} kursi
-          </p>
-          <div class="mt-3 flex gap-2">
-            <button
-              type="button"
-              class="h-9 rounded-md border px-3 text-sm"
-              @click="emit('open', item.id)"
-            >
-              Detail
-            </button>
-            <button
-              type="button"
-              class="h-9 rounded-md border border-destructive/40 px-3 text-sm text-destructive"
-              @click="emit('remove', item)"
-            >
-              Hapus
-            </button>
-          </div>
+        <li v-for="item in items" :key="item.id">
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle>{{ item.nama_penumpang }}</CardTitle>
+              <CardDescription>NIM {{ item.nim }}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>{{ item.rute }}</p>
+              <p class="text-muted-foreground">
+                {{ item.titik_jemput }} · {{ formatWhen(item.waktu_berangkat) }} ·
+                {{ item.jumlah_kursi }} kursi
+              </p>
+            </CardContent>
+            <CardFooter class="gap-2">
+              <Button type="button" variant="outline" @click="emit('open', item.id)">
+                Detail
+              </Button>
+              <Button type="button" variant="destructive" @click="emit('remove', item)">
+                Hapus
+              </Button>
+            </CardFooter>
+          </Card>
         </li>
       </ul>
 
@@ -173,22 +158,17 @@ onMounted(load)
           Menampilkan {{ rangeStart() }}–{{ rangeEnd() }} dari {{ total }}
         </p>
         <div class="flex gap-2">
-          <button
-            type="button"
-            class="h-9 rounded-md border px-3 text-sm disabled:opacity-40"
-            :disabled="page === 0"
-            @click="previousPage"
-          >
+          <Button type="button" variant="outline" :disabled="page === 0" @click="previousPage">
             Sebelumnya
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            class="h-9 rounded-md border px-3 text-sm disabled:opacity-40"
+            variant="outline"
             :disabled="(page + 1) * PAGE_SIZE >= total"
             @click="nextPage"
           >
             Berikutnya
-          </button>
+          </Button>
         </div>
       </nav>
     </template>

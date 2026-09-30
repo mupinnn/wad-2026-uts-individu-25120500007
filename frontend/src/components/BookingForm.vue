@@ -1,9 +1,28 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue"
+import { reactive, ref, watch } from "vue"
 import { ApiError, describeError, RUTE_OPTIONS, createBooking } from "@/lib/api"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+const open = defineModel<boolean>("open", { required: true })
 
 const emit = defineEmits<{
-  cancel: []
   created: []
 }>()
 
@@ -19,6 +38,21 @@ const form = reactive({
 const errors = ref<Record<string, string>>({})
 const formError = ref("")
 const submitting = ref(false)
+
+function reset() {
+  form.nama_penumpang = ""
+  form.nim = ""
+  form.rute = ""
+  form.titik_jemput = ""
+  form.waktu_berangkat = ""
+  form.jumlah_kursi = "1"
+  errors.value = {}
+  formError.value = ""
+}
+
+watch(open, (isOpen) => {
+  if (isOpen) reset()
+})
 
 function validate() {
   const next: Record<string, string> = {}
@@ -58,6 +92,7 @@ async function submit() {
       waktu_berangkat: form.waktu_berangkat,
       jumlah_kursi: Number(form.jumlah_kursi),
     })
+    open.value = false
     emit("created")
   } catch (error) {
     if (error instanceof ApiError && Object.keys(error.fields).length > 0) {
@@ -73,118 +108,116 @@ async function submit() {
 </script>
 
 <template>
-  <section aria-labelledby="form-heading">
-    <h2 id="form-heading" class="text-lg font-semibold">Pesan shuttle</h2>
-    <p class="mt-1 text-sm text-muted-foreground">Isi data penumpang. Semua kolom wajib.</p>
+  <Dialog v-model:open="open">
+    <DialogContent class="max-h-[90svh] overflow-y-auto sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>Pesan shuttle</DialogTitle>
+        <DialogDescription>Isi data penumpang. Semua kolom wajib.</DialogDescription>
+      </DialogHeader>
 
-    <form class="mt-4 flex flex-col gap-4" novalidate @submit.prevent="submit">
-      <p v-if="formError" role="alert" class="text-sm text-destructive">{{ formError }}</p>
+      <form class="flex flex-col gap-4" novalidate @submit.prevent="submit">
+        <p v-if="formError" role="alert" class="text-sm text-destructive">{{ formError }}</p>
 
-      <div class="flex flex-col gap-1">
-        <label for="nama" class="text-sm font-medium">Nama penumpang</label>
-        <input
-          id="nama"
-          v-model="form.nama_penumpang"
-          type="text"
-          autocomplete="name"
-          class="h-10 rounded-md border bg-background px-3 text-sm"
-          :aria-invalid="Boolean(errors.nama_penumpang)"
-          aria-describedby="nama-error"
-        />
-        <p v-if="errors.nama_penumpang" id="nama-error" class="text-sm text-destructive">
-          {{ errors.nama_penumpang }}
-        </p>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label for="nim" class="text-sm font-medium">NIM</label>
-        <input
-          id="nim"
-          v-model="form.nim"
-          type="text"
-          inputmode="numeric"
-          class="h-10 rounded-md border bg-background px-3 text-sm"
-          :aria-invalid="Boolean(errors.nim)"
-          aria-describedby="nim-error"
-        />
-        <p v-if="errors.nim" id="nim-error" class="text-sm text-destructive">{{ errors.nim }}</p>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label for="rute" class="text-sm font-medium">Rute</label>
-        <select
-          id="rute"
-          v-model="form.rute"
-          class="h-10 rounded-md border bg-background px-3 text-sm"
-          :aria-invalid="Boolean(errors.rute)"
-          aria-describedby="rute-error"
-        >
-          <option value="">Pilih rute</option>
-          <option v-for="rute in RUTE_OPTIONS" :key="rute" :value="rute">{{ rute }}</option>
-        </select>
-        <p v-if="errors.rute" id="rute-error" class="text-sm text-destructive">{{ errors.rute }}</p>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label for="jemput" class="text-sm font-medium">Titik jemput</label>
-        <input
-          id="jemput"
-          v-model="form.titik_jemput"
-          type="text"
-          class="h-10 rounded-md border bg-background px-3 text-sm"
-          :aria-invalid="Boolean(errors.titik_jemput)"
-          aria-describedby="jemput-error"
-        />
-        <p v-if="errors.titik_jemput" id="jemput-error" class="text-sm text-destructive">
-          {{ errors.titik_jemput }}
-        </p>
-      </div>
-
-      <div class="flex flex-col gap-1 sm:flex-row sm:gap-4">
-        <div class="flex flex-1 flex-col gap-1">
-          <label for="waktu" class="text-sm font-medium">Waktu berangkat</label>
-          <input
-            id="waktu"
-            v-model="form.waktu_berangkat"
-            type="datetime-local"
-            class="h-10 rounded-md border bg-background px-3 text-sm"
-            :aria-invalid="Boolean(errors.waktu_berangkat)"
-            aria-describedby="waktu-error"
+        <div class="flex flex-col gap-1.5">
+          <Label for="nama">Nama penumpang</Label>
+          <Input
+            id="nama"
+            v-model="form.nama_penumpang"
+            type="text"
+            autocomplete="name"
+            :aria-invalid="Boolean(errors.nama_penumpang)"
+            aria-describedby="nama-error"
           />
-          <p v-if="errors.waktu_berangkat" id="waktu-error" class="text-sm text-destructive">
-            {{ errors.waktu_berangkat }}
+          <p v-if="errors.nama_penumpang" id="nama-error" class="text-sm text-destructive">
+            {{ errors.nama_penumpang }}
           </p>
         </div>
-        <div class="flex w-full flex-col gap-1 sm:w-32">
-          <label for="kursi" class="text-sm font-medium">Jumlah kursi</label>
-          <input
-            id="kursi"
-            v-model="form.jumlah_kursi"
-            type="number"
-            min="1"
-            max="4"
-            class="h-10 rounded-md border bg-background px-3 text-sm"
-            :aria-invalid="Boolean(errors.jumlah_kursi)"
-            aria-describedby="kursi-error"
+
+        <div class="flex flex-col gap-1.5">
+          <Label for="nim">NIM</Label>
+          <Input
+            id="nim"
+            v-model="form.nim"
+            type="text"
+            inputmode="numeric"
+            :aria-invalid="Boolean(errors.nim)"
+            aria-describedby="nim-error"
           />
-          <p v-if="errors.jumlah_kursi" id="kursi-error" class="text-sm text-destructive">
-            {{ errors.jumlah_kursi }}
+          <p v-if="errors.nim" id="nim-error" class="text-sm text-destructive">{{ errors.nim }}</p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <Label for="rute">Rute</Label>
+          <Select v-model="form.rute">
+            <SelectTrigger
+              id="rute"
+              class="w-full"
+              :aria-invalid="Boolean(errors.rute)"
+              aria-describedby="rute-error"
+            >
+              <SelectValue placeholder="Pilih rute" />
+            </SelectTrigger>
+            <SelectContent class="z-[60]" position="popper">
+              <SelectItem v-for="rute in RUTE_OPTIONS" :key="rute" :value="rute">
+                {{ rute }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <p v-if="errors.rute" id="rute-error" class="text-sm text-destructive">{{ errors.rute }}</p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <Label for="jemput">Titik jemput</Label>
+          <Input
+            id="jemput"
+            v-model="form.titik_jemput"
+            type="text"
+            :aria-invalid="Boolean(errors.titik_jemput)"
+            aria-describedby="jemput-error"
+          />
+          <p v-if="errors.titik_jemput" id="jemput-error" class="text-sm text-destructive">
+            {{ errors.titik_jemput }}
           </p>
         </div>
-      </div>
 
-      <div class="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="submit"
-          class="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-50"
-          :disabled="submitting"
-        >
-          {{ submitting ? "Menyimpan…" : "Simpan pemesanan" }}
-        </button>
-        <button type="button" class="h-10 rounded-md border px-4 text-sm" @click="emit('cancel')">
-          Batal
-        </button>
-      </div>
-    </form>
-  </section>
+        <div class="flex flex-col gap-4 sm:flex-row">
+          <div class="flex flex-1 flex-col gap-1.5">
+            <Label for="waktu">Waktu berangkat</Label>
+            <Input
+              id="waktu"
+              v-model="form.waktu_berangkat"
+              type="datetime-local"
+              :aria-invalid="Boolean(errors.waktu_berangkat)"
+              aria-describedby="waktu-error"
+            />
+            <p v-if="errors.waktu_berangkat" id="waktu-error" class="text-sm text-destructive">
+              {{ errors.waktu_berangkat }}
+            </p>
+          </div>
+          <div class="flex w-full flex-col gap-1.5 sm:w-28">
+            <Label for="kursi">Jumlah kursi</Label>
+            <Input
+              id="kursi"
+              v-model="form.jumlah_kursi"
+              type="number"
+              min="1"
+              max="4"
+              :aria-invalid="Boolean(errors.jumlah_kursi)"
+              aria-describedby="kursi-error"
+            />
+            <p v-if="errors.jumlah_kursi" id="kursi-error" class="text-sm text-destructive">
+              {{ errors.jumlah_kursi }}
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" @click="open = false">Batal</Button>
+          <Button type="submit" :disabled="submitting">
+            {{ submitting ? "Menyimpan…" : "Simpan pemesanan" }}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
 </template>
