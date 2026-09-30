@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
-import { listBookings, type Booking } from "@/lib/api"
+import { onMounted, ref, watch } from "vue"
+import { describeError, listBookings, type Booking } from "@/lib/api"
+
+const props = defineProps<{ revision: number }>()
+const emit = defineEmits<{
+  create: []
+  open: [id: number]
+  remove: [booking: Booking]
+}>()
 
 const PAGE_SIZE = 6
 
@@ -26,6 +33,10 @@ async function load() {
   errorMessage.value = ""
   try {
     const data = await listBookings(submittedQuery.value, page.value * PAGE_SIZE, PAGE_SIZE)
+    if (data.items.length === 0 && data.total > 0 && page.value > 0) {
+      page.value -= 1
+      return load()
+    }
     items.value = data.items
     total.value = data.total
     status.value = data.total === 0 ? "empty" : "success"
@@ -33,8 +44,7 @@ async function load() {
     items.value = []
     total.value = 0
     status.value = "error"
-    errorMessage.value =
-      error instanceof Error ? error.message : "Gagal memuat daftar pemesanan"
+    errorMessage.value = describeError(error, "Gagal memuat daftar pemesanan")
   }
 }
 
@@ -59,14 +69,24 @@ function nextPage() {
 const rangeStart = () => (total.value === 0 ? 0 : page.value * PAGE_SIZE + 1)
 const rangeEnd = () => Math.min(total.value, (page.value + 1) * PAGE_SIZE)
 
+watch(() => props.revision, () => load())
 onMounted(load)
 </script>
 
 <template>
   <section aria-labelledby="daftar-heading">
-    <div class="mb-4 flex flex-col gap-1">
-      <h2 id="daftar-heading" class="text-lg font-semibold">Daftar pemesanan</h2>
-      <p class="text-sm text-muted-foreground">Cari berdasarkan nama, NIM, atau rute.</p>
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div class="flex flex-col gap-1">
+        <h2 id="daftar-heading" class="text-lg font-semibold">Daftar pemesanan</h2>
+        <p class="text-sm text-muted-foreground">Cari berdasarkan nama, NIM, atau rute.</p>
+      </div>
+      <button
+        type="button"
+        class="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
+        @click="emit('create')"
+      >
+        Pesan shuttle
+      </button>
     </div>
 
     <form class="mb-4 flex flex-col gap-2 sm:flex-row" @submit.prevent="search">
@@ -129,6 +149,22 @@ onMounted(load)
             {{ item.titik_jemput }} · {{ formatWhen(item.waktu_berangkat) }} ·
             {{ item.jumlah_kursi }} kursi
           </p>
+          <div class="mt-3 flex gap-2">
+            <button
+              type="button"
+              class="h-9 rounded-md border px-3 text-sm"
+              @click="emit('open', item.id)"
+            >
+              Detail
+            </button>
+            <button
+              type="button"
+              class="h-9 rounded-md border border-destructive/40 px-3 text-sm text-destructive"
+              @click="emit('remove', item)"
+            >
+              Hapus
+            </button>
+          </div>
         </li>
       </ul>
 
